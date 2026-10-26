@@ -1,17 +1,26 @@
+import { collection, doc, setDoc } from 'firebase/firestore';
 import { create } from 'zustand';
 
-import { seedUsers } from '../data/seed';
 import type { User } from '../data/types';
+import { firestore } from '../services/firebase';
+import { subscribeToQuery, type Subscription } from '../services/firestoreSync';
+
+export type ProfileInput = Omit<User, 'id'>;
 
 interface UsersState {
   users: User[];
+  subscribe: () => Subscription;
   getUser: (id: string) => User | undefined;
+  // Creates or replaces the signed-in user's own `users/{uid}` doc.
+  saveProfile: (uid: string, profile: ProfileInput) => Promise<void>;
 }
 
-// Users aren't created/edited from within the app yet (no auth/edit-profile
-// flow in scope), so this store is a simple read-only lookup over seed data —
-// the same shape a `users` Firestore collection query would return.
 export const useUsersStore = create<UsersState>((set, get) => ({
-  users: seedUsers,
+  users: [],
+  subscribe: () =>
+    subscribeToQuery<User>(collection(firestore(), 'users'), (users) => set({ users }), 'users'),
   getUser: (id) => get().users.find((u) => u.id === id),
+  saveProfile: async (uid, profile) => {
+    await setDoc(doc(firestore(), 'users', uid), profile);
+  },
 }));

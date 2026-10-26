@@ -3,13 +3,15 @@ import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '../../components/ui/Avatar';
-import { useConversationsStore } from '../../src/store/useConversationsStore';
+import { useCurrentUserId } from '../../src/store/useAuthStore';
+import { otherParticipant, useConversationsStore } from '../../src/store/useConversationsStore';
 import { useUsersStore } from '../../src/store/useUsersStore';
 import { colors, spacing, typography } from '../../src/theme';
 import { timeAgo } from '../../src/utils/format';
 
 export default function MessagesScreen() {
   const insets = useSafeAreaInsets();
+  const currentUserId = useCurrentUserId();
   const conversations = useConversationsStore((s) => s.conversations);
   const getUser = useUsersStore((s) => s.getUser);
 
@@ -22,7 +24,8 @@ export default function MessagesScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         renderItem={({ item }) => {
-          const user = getUser(item.userId);
+          const otherId = otherParticipant(item, currentUserId);
+          const user = otherId ? getUser(otherId) : undefined;
           if (!user) return null;
           return (
             <Pressable style={styles.row} onPress={() => router.push(`/profile/user/${user.id}`)}>

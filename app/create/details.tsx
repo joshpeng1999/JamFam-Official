@@ -4,14 +4,15 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useShallow } from 'zustand/react/shallow';
 
 import { CreateStepHeader } from '../../components/create/CreateStepHeader';
 import { TagPickerSheet } from '../../components/create/TagPickerSheet';
 import { Chip } from '../../components/ui/Chip';
 import { PostThumbnail } from '../../components/ui/PostThumbnail';
-import { CURRENT_USER_ID } from '../../src/data/types';
+import { UnsupportedFileError, UploadTooLargeError } from '../../src/services/mediaUpload';
+import { useCurrentUserId } from '../../src/store/useAuthStore';
 import { useCreatePostDraftStore } from '../../src/store/useCreatePostDraftStore';
 import { usePostsStore } from '../../src/store/usePostsStore';
 import { useProjectsStore } from '../../src/store/useProjectsStore';
@@ -20,13 +21,15 @@ import { colors, radii, spacing, typography } from '../../src/theme';
 const NEW_PROJECT_KEY = '__new__';
 
 export default function DetailsScreen() {
+  const currentUserId = useCurrentUserId();
   const draft = useCreatePostDraftStore();
   const { setField } = draft;
   const createPost = usePostsStore((s) => s.createPost);
   const createProject = useProjectsStore((s) => s.createProject);
-  const myProjects = useProjectsStore(useShallow((s) => s.getProjectsByOwner(CURRENT_USER_ID)));
+  const myProjects = useProjectsStore(useShallow((s) => s.getProjectsByOwner(currentUserId)));
 
   const [publishing, setPublishing] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [creatingNewProject, setCreatingNewProject] = useState(!draft.projectId && myProjects.length === 0);
   const sheetRef = useRef<BottomSheetModal>(null);
 
@@ -42,49 +45,67 @@ export default function DetailsScreen() {
   const canPublish = draft.title.trim().length > 0 && (draft.projectId || draft.newProjectTitle.trim().length > 0);
 
   const publish = async () => {
-    console.log('[publish] tapped, canPublish=', canPublish, 'type=', draft.type);
     if (!canPublish || draft.type === null) return;
     setPublishing(true);
 
     try {
       let projectId = draft.projectId;
       if (!projectId) {
-        console.log('[publish] creating project');
-        const project = createProject({
-          ownerId: CURRENT_USER_ID,
+        const project = await createProject({
+          ownerId: currentUserId,
           title: draft.newProjectTitle.trim() || draft.title,
         });
         projectId = project.id;
+        // If the upload below fails, a retry reuses this project instead of
+        // creating a duplicate.
+        setField('projectId', project.id);
+        setCreatingNewProject(false);
       }
 
-      console.log('[publish] creating post, projectId=', projectId, 'mediaUri=', draft.mediaUri);
-      createPost({
-        projectId,
-        authorId: CURRENT_USER_ID,
-        type: draft.type,
-        title: draft.title.trim(),
-        description: draft.description.trim(),
-        mediaUri: draft.mediaUri ?? undefined,
-        coverUri: draft.coverUri ?? undefined,
-        lyricsBody: draft.lyricsBody || undefined,
-        durationSec: draft.type === 'lyrics' ? undefined : draft.trimEndSec - draft.trimStartSec,
-        trimStartSec: draft.type === 'lyrics' ? undefined : draft.trimStartSec,
-        trimEndSec: draft.type === 'lyrics' ? undefined : draft.trimEndSec,
-        lookingForTags: draft.tags,
-      });
+      // Stays in the publish flow (no navigation) until the upload finishes so
+      // a failed upload can simply be retried with Share.
+      await createPost(
+        {
+          projectId,
+          authorId: currentUserId,
+          type: draft.type,
+          title: draft.title.trim(),
+          description: draft.description.trim(),
+          mediaUri: draft.mediaUri ?? undefined,
+          coverUri: draft.coverUri ?? undefined,
+          lyricsBody: draft.lyricsBody || undefined,
+          durationSec: draft.type === 'lyrics' ? undefined : draft.trimEndSec - draft.trimStartSec,
+          trimStartSec: draft.type === 'lyrics' ? undefined : draft.trimStartSec,
+          trimEndSec: draft.type === 'lyrics' ? undefined : draft.trimEndSec,
+          lookingForTags: draft.tags,
+        },
+        setUploadProgress,
+      );
 
-      console.log('[publish] post created, navigating to tabs');
       router.dismissTo('/(tabs)');
     } catch (error) {
-      console.error('[publish] threw an error:', error);
+      console.warn('[publish] failed:', error);
+      Alert.alert(
+        'Couldn’t share post',
+        error instanceof UploadTooLargeError || error instanceof UnsupportedFileError
+          ? error.message
+          : 'Check your connection and try again.',
+      );
     } finally {
       setPublishing(false);
+      setUploadProgress(null);
     }
   };
 
   return (
     <View style={styles.container}>
       <CreateStepHeader actionLabel="Share" actionDisabled={!canPublish} actionLoading={publishing} onAction={publish} />
+
+      {uploadProgress !== null && (
+        <View style={styles.progressTrack}>
+          <View style={[styles.progressFill, { width: `${Math.round(uploadProgress * 100)}%` }]} />
+        </View>
+      )}
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Pressable onPress={pickCover} style={styles.coverPicker}>
@@ -185,6 +206,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  progressTrack: {
+    height: 3,
+    backgroundColor: colors.surfaceAlt,
+  },
+  progressFill: {
+    height: 3,
+    backgroundColor: colors.accent,
   },
   scrollContent: {
     paddingBottom: spacing.xxxl,

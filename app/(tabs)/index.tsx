@@ -1,21 +1,23 @@
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { router } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import { FlatList, StyleSheet, View, type ViewToken } from 'react-native';
+import { Alert, FlatList, StyleSheet, Text, View, type ViewToken } from 'react-native';
 import { useShallow } from 'zustand/react/shallow';
 
 import { ConnectSheet } from '../../components/feed/ConnectSheet';
 import { FeedPostCard } from '../../components/feed/FeedPostCard';
 import { FeedTopBar } from '../../components/feed/FeedTopBar';
-import { CURRENT_USER_ID, type Post } from '../../src/data/types';
+import type { Post } from '../../src/data/types';
+import { useCurrentUserId } from '../../src/store/useAuthStore';
 import { useConnectionsStore } from '../../src/store/useConnectionsStore';
 import { usePostsStore } from '../../src/store/usePostsStore';
 import { useProjectsStore } from '../../src/store/useProjectsStore';
 import { useUsersStore } from '../../src/store/useUsersStore';
-import { colors } from '../../src/theme';
+import { colors, spacing, typography } from '../../src/theme';
 
 export default function FeedScreen() {
-  const posts = usePostsStore(useShallow((s) => s.getFeedPosts(CURRENT_USER_ID)));
+  const currentUserId = useCurrentUserId();
+  const posts = usePostsStore(useShallow((s) => s.getFeedPosts(currentUserId)));
   const getPostsByProject = usePostsStore((s) => s.getPostsByProject);
   const getUser = useUsersStore((s) => s.getUser);
   const getProject = useProjectsStore((s) => s.getProject);
@@ -55,6 +57,14 @@ export default function FeedScreen() {
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={{ itemVisiblePercentThreshold: 60 }}
         getItemLayout={(_, index) => ({ length: containerHeight, offset: containerHeight * index, index })}
+        ListEmptyComponent={
+          <View style={[styles.empty, { height: containerHeight }]}>
+            <Text style={[typography.title, styles.emptyTitle]}>No posts yet</Text>
+            <Text style={[typography.body, styles.emptyBody]}>
+              When other artists share their work it’ll show up here. Tap + to post yours.
+            </Text>
+          </View>
+        }
         renderItem={({ item, index }) => {
           const author = getUser(item.authorId);
           const project = getProject(item.projectId);
@@ -84,11 +94,11 @@ export default function FeedScreen() {
         onSend={(message) => {
           if (!connectTarget) return;
           sendConnectionRequest({
-            fromUserId: CURRENT_USER_ID,
+            fromUserId: currentUserId,
             toUserId: connectTarget.authorId,
             postId: connectTarget.id,
             message,
-          });
+          }).catch(() => Alert.alert('Couldn’t send request', 'Check your connection and try again.'));
           sheetRef.current?.dismiss();
         }}
       />
@@ -100,5 +110,18 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  empty: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xxl,
+    gap: spacing.sm,
+  },
+  emptyTitle: {
+    color: colors.textPrimary,
+  },
+  emptyBody: {
+    color: colors.textSecondary,
+    textAlign: 'center',
   },
 });

@@ -1,19 +1,22 @@
 import { router } from 'expo-router';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { Alert, FlatList, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useShallow } from 'zustand/react/shallow';
 
 import { RequestCard } from '../../components/notifications/RequestCard';
-import { CURRENT_USER_ID } from '../../src/data/types';
+import { useCurrentUserId } from '../../src/store/useAuthStore';
 import { useConnectionsStore } from '../../src/store/useConnectionsStore';
 import { useConversationsStore } from '../../src/store/useConversationsStore';
 import { usePostsStore } from '../../src/store/usePostsStore';
 import { useUsersStore } from '../../src/store/useUsersStore';
 import { colors, spacing, typography } from '../../src/theme';
 
+const showError = () => Alert.alert('Something went wrong', 'Check your connection and try again.');
+
 export default function NotificationsScreen() {
   const insets = useSafeAreaInsets();
-  const requests = useConnectionsStore(useShallow((s) => s.getIncomingRequests(CURRENT_USER_ID)));
+  const currentUserId = useCurrentUserId();
+  const requests = useConnectionsStore(useShallow((s) => s.getIncomingRequests(currentUserId)));
   const respondToRequest = useConnectionsStore((s) => s.respondToRequest);
   const ensureConversation = useConversationsStore((s) => s.ensureConversation);
   const getUser = useUsersStore((s) => s.getUser);
@@ -40,10 +43,10 @@ export default function NotificationsScreen() {
               request={item}
               requester={requester}
               post={getPost(item.postId)}
-              onAccept={() => respondToRequest(item.id, 'accepted')}
-              onDecline={() => respondToRequest(item.id, 'declined')}
+              onAccept={() => respondToRequest(item.id, 'accepted').catch(showError)}
+              onDecline={() => respondToRequest(item.id, 'declined').catch(showError)}
               onReply={() => {
-                ensureConversation(item.fromUserId, item.message);
+                ensureConversation(currentUserId, item.fromUserId, item.message).catch(showError);
                 router.push('/messages');
               }}
               onPressAvatar={() => router.push(`/profile/user/${item.fromUserId}`)}

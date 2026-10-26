@@ -25,12 +25,6 @@ export function WaveformPlayer({ mediaUri, seed, isActive, barCount = 48 }: Wave
     }
   }, [isActive, player, status.playing]);
 
-  useEffect(() => {
-    return () => {
-      player.pause();
-    };
-  }, [player]);
-
   const togglePlayback = () => {
     if (status.playing) {
       player.pause();
