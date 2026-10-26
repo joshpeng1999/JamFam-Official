@@ -1,13 +1,12 @@
-import { getApps, initializeApp, type FirebaseOptions } from 'firebase/app';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getApp, getApps, initializeApp, type FirebaseApp, type FirebaseOptions } from 'firebase/app';
+import { getAuth, getReactNativePersistence, initializeAuth, type Auth } from 'firebase/auth';
+import { getFirestore, initializeFirestore, type Firestore } from 'firebase/firestore';
+import { getStorage, type FirebaseStorage } from 'firebase/storage';
 
-// --- Firebase swap-in point -------------------------------------------------
-// The rest of the app talks to the mock, AsyncStorage-backed zustand stores in
-// `src/store/`. To go live:
-//   1. Fill in the config below (or read it from app config / env vars).
-//   2. Replace each store's mock CRUD calls with the matching
-//      firebase/firestore (and firebase/auth, firebase/storage) calls.
-// `firebaseApp` stays `null` until real config is supplied, so importing this
-// file is always safe even before Firebase is configured.
+// Config comes from `EXPO_PUBLIC_FIREBASE_*` vars in `.env` (see `.env.example`).
+// These values are not secrets — Firebase web config is meant to ship in the
+// app; access is enforced by `firestore.rules` and `storage.rules`.
 const firebaseConfig: FirebaseOptions = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -17,9 +16,40 @@ const firebaseConfig: FirebaseOptions = {
   appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
 };
 
-const isConfigured = Boolean(firebaseConfig.apiKey && firebaseConfig.projectId);
+export const isFirebaseConfigured = Boolean(
+  firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.storageBucket,
+);
 
-export const firebaseApp =
-  isConfigured && getApps().length === 0 ? initializeApp(firebaseConfig) : null;
+function createServices() {
+  const isFirstInit = getApps().length === 0;
+  const app: FirebaseApp = isFirstInit ? initializeApp(firebaseConfig) : getApp();
 
-export const isFirebaseConfigured = isConfigured;
+  // `initialize*` may only run once per app; on a fast refresh the app already
+  // exists, so fall back to the getters for the already-initialized instances.
+  const auth: Auth = isFirstInit
+    ? initializeAuth(app, { persistence: getReactNativePersistence(AsyncStorage) })
+    : getAuth(app);
+  // `ignoreUndefinedProperties` lets us write our optional TS fields (e.g.
+  // `post.coverUri`) straight to Firestore without stripping `undefined`s.
+  const db: Firestore = isFirstInit
+    ? initializeFirestore(app, { ignoreUndefinedProperties: true })
+    : getFirestore(app);
+  const storage: FirebaseStorage = getStorage(app);
+
+  return { app, auth, db, storage };
+}
+
+// Only initialize when configured, so the app can show a friendly setup
+// message (see `app/index.tsx`) instead of crashing on a missing `.env`.
+const services = isFirebaseConfigured ? createServices() : null;
+
+function requireServices() {
+  if (!services) {
+    throw new Error('Firebase is not configured. Copy .env.example to .env and fill in your project values.');
+  }
+  return services;
+}
+
+export const firebaseAuth = () => requireServices().auth;
+export const firestore = () => requireServices().db;
+export const firebaseStorage = () => requireServices().storage;

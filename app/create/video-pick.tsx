@@ -98,7 +98,8 @@ export default function VideoPickScreen() {
     }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['videos'],
-      quality: 1,
+      // Transcode to 720p so uploads stay well under the 100 MB Storage limit.
+      videoQuality: ImagePicker.UIImagePickerControllerQualityType.IFrame1280x720,
     });
     if (result.canceled || !result.assets[0]) return;
 

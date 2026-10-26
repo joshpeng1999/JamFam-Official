@@ -1,18 +1,19 @@
-import { Alert } from 'react-native';
+import { router } from 'expo-router';
 
 import { ProfileScreenBody } from '../../../components/profile/ProfileScreenBody';
-import { CURRENT_USER_ID } from '../../../src/data/types';
+import { useCurrentUserId } from '../../../src/store/useAuthStore';
 import { useUsersStore } from '../../../src/store/useUsersStore';
 
 export default function OwnProfileScreen() {
-  const user = useUsersStore((s) => s.getUser(CURRENT_USER_ID));
+  const currentUserId = useCurrentUserId();
+  const user = useUsersStore((s) => s.getUser(currentUserId));
   if (!user) return null;
 
   return (
     <ProfileScreenBody
       user={user}
       isOwnProfile
-      onPrimaryAction={() => Alert.alert('Edit Profile', 'Profile editing isn’t available in this preview yet.')}
+      onPrimaryAction={() => router.push('/profile-setup')}
     />
   );
 }

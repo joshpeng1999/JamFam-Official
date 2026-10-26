@@ -70,8 +70,10 @@ export interface ConnectionRequest {
 }
 
 export interface Conversation {
+  // Deterministic: the two participant ids sorted and joined with `_`, so
+  // both sides always resolve to the same doc.
   id: string;
-  userId: string;
+  participantIds: string[];
   lastMessage: string;
   lastMessageAt: string;
 }
@@ -104,7 +106,5 @@ export const COLLABORATOR_ROLES = [
   'Pro Tools Specialist',
   'Event Planner',
 ] as const;
-
-export const CURRENT_USER_ID = 'u1';
 
 export const MAX_CLIP_DURATION_SEC = 60;

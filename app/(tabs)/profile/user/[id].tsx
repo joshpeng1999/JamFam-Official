@@ -5,22 +5,23 @@ import { Alert } from 'react-native';
 
 import { ConnectSheet } from '../../../../components/feed/ConnectSheet';
 import { ProfileScreenBody } from '../../../../components/profile/ProfileScreenBody';
-import { CURRENT_USER_ID } from '../../../../src/data/types';
+import { useCurrentUserId } from '../../../../src/store/useAuthStore';
 import { useConnectionsStore } from '../../../../src/store/useConnectionsStore';
 import { usePostsStore } from '../../../../src/store/usePostsStore';
 import { useUsersStore } from '../../../../src/store/useUsersStore';
 
 export default function OtherUserProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const currentUserId = useCurrentUserId();
   const user = useUsersStore((s) => s.getUser(id));
   const getPostsByAuthor = usePostsStore((s) => s.getPostsByAuthor);
   const sendConnectionRequest = useConnectionsStore((s) => s.sendConnectionRequest);
-  const isConnected = useConnectionsStore((s) => s.getAcceptedConnectionIds(CURRENT_USER_ID).includes(id));
+  const isConnected = useConnectionsStore((s) => s.getAcceptedConnectionIds(currentUserId).includes(id));
   const sheetRef = useRef<BottomSheetModal>(null);
 
   if (!user) return null;
 
-  if (user.id === CURRENT_USER_ID) {
+  if (user.id === currentUserId) {
     router.replace('/profile');
     return null;
   }
@@ -49,11 +50,11 @@ export default function OtherUserProfileScreen() {
         onSend={(message) => {
           if (!latestPost) return;
           sendConnectionRequest({
-            fromUserId: CURRENT_USER_ID,
+            fromUserId: currentUserId,
             toUserId: user.id,
             postId: latestPost.id,
             message,
-          });
+          }).catch(() => Alert.alert('Couldn’t send request', 'Check your connection and try again.'));
           sheetRef.current?.dismiss();
         }}
       />

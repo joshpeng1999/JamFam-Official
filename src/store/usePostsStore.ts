@@ -1,11 +1,11 @@
+import { collection, doc, setDoc } from 'firebase/firestore';
 import { create } from 'zustand';
 
-import { seedPosts } from '../data/seed';
 import type { Post, PostType } from '../data/types';
-import { loadCollection, saveCollection } from '../services/mockPersistence';
+import { firestore } from '../services/firebase';
+import { subscribeToQuery, type Subscription } from '../services/firestoreSync';
+import { uploadLocalFile } from '../services/mediaUpload';
 import { useProjectsStore } from './useProjectsStore';
-
-const STORAGE_KEY = 'posts';
 
 export interface CreatePostInput {
   projectId: string;
@@ -13,6 +13,7 @@ export interface CreatePostInput {
   type: PostType;
   title: string;
   description: string;
+  // Local `file://` URIs from the pickers; uploaded to Storage on create.
   mediaUri?: string;
   coverUri?: string;
   lyricsBody?: string;
@@ -24,47 +25,55 @@ export interface CreatePostInput {
 
 interface PostsState {
   posts: Post[];
-  hydrated: boolean;
-  hydrate: () => Promise<void>;
+  subscribe: () => Subscription;
   getPost: (id: string) => Post | undefined;
   getFeedPosts: (excludeAuthorId: string) => Post[];
   getPostsByAuthor: (authorId: string) => Post[];
   getPostsByProject: (projectId: string) => Post[];
-  createPost: (input: CreatePostInput) => Post;
+  createPost: (input: CreatePostInput, onUploadProgress?: (fraction: number) => void) => Promise<Post>;
 }
 
+const postsCollection = () => collection(firestore(), 'posts');
+const newestFirst = (a: Post, b: Post) => (a.createdAt < b.createdAt ? 1 : -1);
+
 export const usePostsStore = create<PostsState>((set, get) => ({
-  posts: seedPosts,
-  hydrated: false,
-  hydrate: async () => {
-    if (get().hydrated) return;
-    const posts = await loadCollection<Post>(STORAGE_KEY, seedPosts);
-    set({ posts, hydrated: true });
-  },
+  posts: [],
+  subscribe: () => subscribeToQuery<Post>(postsCollection(), (posts) => set({ posts }), 'posts'),
   getPost: (id) => get().posts.find((p) => p.id === id),
   getFeedPosts: (excludeAuthorId) =>
-    [...get().posts]
-      .filter((p) => p.authorId !== excludeAuthorId)
-      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)),
+    get()
+      .posts.filter((p) => p.authorId !== excludeAuthorId)
+      .sort(newestFirst),
   getPostsByAuthor: (authorId) =>
-    [...get().posts]
-      .filter((p) => p.authorId === authorId)
-      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)),
+    get()
+      .posts.filter((p) => p.authorId === authorId)
+      .sort(newestFirst),
   getPostsByProject: (projectId) =>
-    [...get().posts]
-      .filter((p) => p.projectId === projectId)
-      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)),
-  createPost: (input) => {
+    get()
+      .posts.filter((p) => p.projectId === projectId)
+      .sort(newestFirst),
+  createPost: async (input, onUploadProgress) => {
+    const ref = doc(postsCollection());
+    const storageDir = `users/${input.authorId}/posts/${ref.id}`;
+
+    // Upload media first so the post never appears in anyone's feed pointing
+    // at a file that isn't there yet.
+    const mediaUri = input.mediaUri
+      ? await uploadLocalFile(input.mediaUri, `${storageDir}/media`, onUploadProgress)
+      : undefined;
+    const coverUri = input.coverUri ? await uploadLocalFile(input.coverUri, `${storageDir}/cover`) : undefined;
+
     const post: Post = {
-      id: `post_${Date.now()}`,
+      ...input,
+      id: ref.id,
+      mediaUri,
+      coverUri,
       waveformSeed: Math.floor(Math.random() * 1000),
       createdAt: new Date().toISOString(),
-      ...input,
     };
-    const posts = [post, ...get().posts];
-    set({ posts });
-    saveCollection(STORAGE_KEY, posts);
-    useProjectsStore.getState().touchProject(input.projectId);
+    const { id: _id, ...data } = post;
+    await setDoc(ref, data);
+    await useProjectsStore.getState().touchProject(input.projectId);
     return post;
   },
 }));

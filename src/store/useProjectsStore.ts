@@ -1,34 +1,34 @@
+import { collection, doc, setDoc, updateDoc } from 'firebase/firestore';
 import { create } from 'zustand';
 
-import { seedProjects } from '../data/seed';
 import type { Project } from '../data/types';
-import { loadCollection, saveCollection } from '../services/mockPersistence';
-
-const STORAGE_KEY = 'projects';
+import { firestore } from '../services/firebase';
+import { subscribeToQuery, type Subscription } from '../services/firestoreSync';
 
 interface ProjectsState {
   projects: Project[];
-  hydrated: boolean;
-  hydrate: () => Promise<void>;
+  subscribe: () => Subscription;
   getProject: (id: string) => Project | undefined;
   getProjectsByOwner: (ownerId: string) => Project[];
-  createProject: (input: { ownerId: string; title: string }) => Project;
-  touchProject: (id: string) => void;
+  createProject: (input: { ownerId: string; title: string }) => Promise<Project>;
+  touchProject: (id: string) => Promise<void>;
 }
 
+const projectsCollection = () => collection(firestore(), 'projects');
+
 export const useProjectsStore = create<ProjectsState>((set, get) => ({
-  projects: seedProjects,
-  hydrated: false,
-  hydrate: async () => {
-    if (get().hydrated) return;
-    const projects = await loadCollection<Project>(STORAGE_KEY, seedProjects);
-    set({ projects, hydrated: true });
-  },
+  projects: [],
+  subscribe: () =>
+    subscribeToQuery<Project>(projectsCollection(), (projects) => set({ projects }), 'projects'),
   getProject: (id) => get().projects.find((p) => p.id === id),
-  getProjectsByOwner: (ownerId) => get().projects.filter((p) => p.ownerId === ownerId),
-  createProject: ({ ownerId, title }) => {
+  getProjectsByOwner: (ownerId) =>
+    get()
+      .projects.filter((p) => p.ownerId === ownerId)
+      .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1)),
+  createProject: async ({ ownerId, title }) => {
+    const ref = doc(projectsCollection());
     const project: Project = {
-      id: `p_${Date.now()}`,
+      id: ref.id,
       ownerId,
       title,
       description: '',
@@ -36,16 +36,11 @@ export const useProjectsStore = create<ProjectsState>((set, get) => ({
       collaboratorIds: [ownerId],
       updatedAt: new Date().toISOString(),
     };
-    const projects = [project, ...get().projects];
-    set({ projects });
-    saveCollection(STORAGE_KEY, projects);
+    const { id: _id, ...data } = project;
+    await setDoc(ref, data);
     return project;
   },
-  touchProject: (id) => {
-    const projects = get().projects.map((p) =>
-      p.id === id ? { ...p, updatedAt: new Date().toISOString() } : p,
-    );
-    set({ projects });
-    saveCollection(STORAGE_KEY, projects);
+  touchProject: async (id) => {
+    await updateDoc(doc(projectsCollection(), id), { updatedAt: new Date().toISOString() });
   },
 }));

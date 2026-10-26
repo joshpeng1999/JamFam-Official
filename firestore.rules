@@ -1,0 +1,68 @@
+rules_version = '2';
+
+// Jamfam Firestore security rules.
+// Deploy: `npx firebase-tools deploy --only firestore:rules`
+// (or paste into Firebase console → Firestore → Rules).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isMe(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    // Public artist profiles; each person can only write their own.
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow create, update: if isMe(uid);
+      allow delete: if false;
+    }
+
+    match /projects/{projectId} {
+      allow read: if signedIn();
+      allow create: if isMe(request.resource.data.ownerId);
+      allow update: if isMe(resource.data.ownerId)
+        && request.resource.data.ownerId == resource.data.ownerId;
+      allow delete: if isMe(resource.data.ownerId);
+    }
+
+    match /posts/{postId} {
+      allow read: if signedIn();
+      allow create: if isMe(request.resource.data.authorId);
+      allow update: if isMe(resource.data.authorId)
+        && request.resource.data.authorId == resource.data.authorId;
+      allow delete: if isMe(resource.data.authorId);
+    }
+
+    // Only the sender and recipient can see a request. The sender creates it
+    // as `pending`; only the recipient can accept/decline it.
+    match /connectionRequests/{requestId} {
+      allow read: if isMe(resource.data.fromUserId) || isMe(resource.data.toUserId);
+      allow create: if isMe(request.resource.data.fromUserId)
+        && request.resource.data.toUserId != request.auth.uid
+        && request.resource.data.status == 'pending';
+      allow update: if isMe(resource.data.toUserId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+        && request.resource.data.status in ['accepted', 'declined'];
+      allow delete: if false;
+    }
+
+    // Conversation ids are the two participant uids sorted and joined by `_`.
+    match /conversations/{conversationId} {
+      function validParticipants(data) {
+        return data.participantIds.size() == 2
+          && request.auth.uid in data.participantIds
+          && conversationId == data.participantIds[0] + '_' + data.participantIds[1];
+      }
+
+      allow read: if signedIn() && request.auth.uid in resource.data.participantIds;
+      allow create: if signedIn() && validParticipants(request.resource.data);
+      allow update: if signedIn()
+        && request.auth.uid in resource.data.participantIds
+        && request.resource.data.participantIds == resource.data.participantIds;
+      allow delete: if false;
+    }
+  }
+}
