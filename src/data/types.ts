@@ -2,7 +2,7 @@ export type PostType = 'video' | 'audio' | 'lyrics';
 
 export type ProjectStatus = 'in_progress' | 'completed';
 
-export type ConnectionStatus = 'pending' | 'accepted' | 'declined';
+export type ConnectionStatus = 'pending' | 'accepted' | 'declined' | 'disconnected';
 
 export interface Prompt {
   question: string;

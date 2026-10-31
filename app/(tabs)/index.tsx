@@ -75,7 +75,7 @@ export default function FeedScreen() {
         ListEmptyComponent={
           <View style={[styles.empty, { height: containerHeight }]}>
             <Text style={[typography.title, styles.emptyTitle]}>
-              {tab === 'friends' ? 'No posts from friends yet' : 'No posts yet'}
+              {tab === 'friends' ? 'No posts in your JamFam yet' : 'No posts yet'}
             </Text>
             <Text style={[typography.body, styles.emptyBody]}>
               {tab === 'friends'

@@ -29,7 +29,7 @@ export function FeedTopBar({ tab, onChangeTab }: FeedTopBarProps) {
         </Pressable>
         <Pressable onPress={() => onChangeTab('friends')}>
           <Text style={[typography.subtitle, tab === 'friends' ? styles.tabActive : styles.tabInactive]}>
-            Friends
+            JamFam
           </Text>
         </Pressable>
       </View>

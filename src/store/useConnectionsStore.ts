@@ -19,6 +19,7 @@ interface ConnectionsState {
     message?: string;
   }) => Promise<ConnectionRequest>;
   respondToRequest: (id: string, status: 'accepted' | 'declined') => Promise<void>;
+  disconnect: (myId: string, otherUserId: string) => Promise<void>;
 }
 
 const requestsCollection = () => collection(firestore(), 'connectionRequests');
@@ -101,6 +102,25 @@ export const useConnectionsStore = create<ConnectionsState>((set, get) => {
             lastMessageAt: new Date().toISOString(),
           });
         }
+      }
+      await batch.commit();
+    },
+    disconnect: async (myId, otherUserId) => {
+      const conversationId = conversationIdFor(myId, otherUserId);
+      const batch = writeBatch(firestore());
+      // A pair can have more than one accepted request between them.
+      get()
+        .requests.filter(
+          (r) => r.status === 'accepted' && conversationIdFor(r.fromUserId, r.toUserId) === conversationId,
+        )
+        .forEach((r) => batch.update(doc(requestsCollection(), r.id), { status: 'disconnected' }));
+      // Removes the chat for both people and stops new messages. Its messages
+      // are kept, so they come back if the pair reconnects.
+      // Rules can't authorize deleting a doc that doesn't exist, and older
+      // connections may not have a conversation.
+      const hasConversation = useConversationsStore.getState().conversations.some((c) => c.id === conversationId);
+      if (hasConversation) {
+        batch.delete(doc(conversationsCollection(), conversationId));
       }
       await batch.commit();
     },
