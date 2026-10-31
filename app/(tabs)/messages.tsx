@@ -28,7 +28,7 @@ export default function MessagesScreen() {
           const user = otherId ? getUser(otherId) : undefined;
           if (!user) return null;
           return (
-            <Pressable style={styles.row} onPress={() => router.push(`/profile/user/${user.id}`)}>
+            <Pressable style={styles.row} onPress={() => router.push(`/chat/${user.id}`)}>
               <Avatar name={user.name} color={user.avatarColor} size={48} />
               <View style={{ flex: 1 }}>
                 <Text style={[typography.bodyStrong, styles.heading]}>{user.name}</Text>

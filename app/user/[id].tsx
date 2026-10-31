@@ -1,14 +1,14 @@
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { router, useLocalSearchParams } from 'expo-router';
+import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useRef } from 'react';
 import { Alert } from 'react-native';
 
-import { ConnectSheet } from '../../../../components/feed/ConnectSheet';
-import { ProfileScreenBody } from '../../../../components/profile/ProfileScreenBody';
-import { useCurrentUserId } from '../../../../src/store/useAuthStore';
-import { useConnectionsStore } from '../../../../src/store/useConnectionsStore';
-import { usePostsStore } from '../../../../src/store/usePostsStore';
-import { useUsersStore } from '../../../../src/store/useUsersStore';
+import { ConnectSheet } from '../../components/feed/ConnectSheet';
+import { ProfileScreenBody } from '../../components/profile/ProfileScreenBody';
+import { useCurrentUserId } from '../../src/store/useAuthStore';
+import { useConnectionsStore } from '../../src/store/useConnectionsStore';
+import { usePostsStore } from '../../src/store/usePostsStore';
+import { useUsersStore } from '../../src/store/useUsersStore';
 
 export default function OtherUserProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -21,10 +21,7 @@ export default function OtherUserProfileScreen() {
 
   if (!user) return null;
 
-  if (user.id === currentUserId) {
-    router.replace('/profile');
-    return null;
-  }
+  if (user.id === currentUserId) return <Redirect href="/profile" />;
 
   const latestPost = getPostsByAuthor(user.id)[0];
 

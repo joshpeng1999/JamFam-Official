@@ -1,12 +1,12 @@
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { router } from 'expo-router';
+import { router, useIsFocused } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { Alert, FlatList, StyleSheet, Text, View, type ViewToken } from 'react-native';
 import { useShallow } from 'zustand/react/shallow';
 
 import { ConnectSheet } from '../../components/feed/ConnectSheet';
 import { FeedPostCard } from '../../components/feed/FeedPostCard';
-import { FeedTopBar } from '../../components/feed/FeedTopBar';
+import { FeedTopBar, type FeedTab } from '../../components/feed/FeedTopBar';
 import type { Post } from '../../src/data/types';
 import { useCurrentUserId } from '../../src/store/useAuthStore';
 import { useConnectionsStore } from '../../src/store/useConnectionsStore';
@@ -17,7 +17,15 @@ import { colors, spacing, typography } from '../../src/theme';
 
 export default function FeedScreen() {
   const currentUserId = useCurrentUserId();
-  const posts = usePostsStore(useShallow((s) => s.getFeedPosts(currentUserId)));
+  const isFocused = useIsFocused();
+  const [tab, setTab] = useState<FeedTab>('explore');
+  const friendIds = useConnectionsStore(useShallow((s) => s.getAcceptedConnectionIds(currentUserId)));
+  const posts = usePostsStore(
+    useShallow((s) => {
+      const feed = s.getFeedPosts(currentUserId);
+      return tab === 'friends' ? feed.filter((p) => friendIds.includes(p.authorId)) : feed;
+    }),
+  );
   const getPostsByProject = usePostsStore((s) => s.getPostsByProject);
   const getUser = useUsersStore((s) => s.getUser);
   const getProject = useProjectsStore((s) => s.getProject);
@@ -34,6 +42,11 @@ export default function FeedScreen() {
     }
   }).current;
 
+  const changeTab = (next: FeedTab) => {
+    setTab(next);
+    setActiveIndex(0);
+  };
+
   const openConnectSheet = useCallback((post: Post) => {
     setConnectTarget(post);
     sheetRef.current?.present();
@@ -48,6 +61,8 @@ export default function FeedScreen() {
   return (
     <View style={styles.container} onLayout={(e) => setContainerHeight(e.nativeEvent.layout.height)}>
       <FlatList
+        // Each feed starts from its top rather than the other feed's scroll position.
+        key={tab}
         data={posts}
         keyExtractor={(item) => item.id}
         pagingEnabled
@@ -59,9 +74,13 @@ export default function FeedScreen() {
         getItemLayout={(_, index) => ({ length: containerHeight, offset: containerHeight * index, index })}
         ListEmptyComponent={
           <View style={[styles.empty, { height: containerHeight }]}>
-            <Text style={[typography.title, styles.emptyTitle]}>No posts yet</Text>
+            <Text style={[typography.title, styles.emptyTitle]}>
+              {tab === 'friends' ? 'No posts from friends yet' : 'No posts yet'}
+            </Text>
             <Text style={[typography.body, styles.emptyBody]}>
-              When other artists share their work it’ll show up here. Tap + to post yours.
+              {tab === 'friends'
+                ? 'Posts from artists you’ve connected with will show up here.'
+                : 'When other artists share their work it’ll show up here. Tap + to post yours.'}
             </Text>
           </View>
         }
@@ -76,16 +95,16 @@ export default function FeedScreen() {
               project={project}
               projectPostCount={getPostsByProject(item.projectId).length}
               height={containerHeight}
-              isActive={index === activeIndex}
+              isActive={isFocused && index === activeIndex}
               onConnectPress={() => openConnectSheet(item)}
-              onProjectPress={() => router.push(`/profile/project/${item.projectId}`)}
-              onAuthorPress={() => router.push(`/profile/user/${item.authorId}`)}
+              onProjectPress={() => router.push(`/project/${item.projectId}`)}
+              onAuthorPress={() => router.push(`/user/${item.authorId}`)}
             />
           );
         }}
       />
 
-      <FeedTopBar />
+      <FeedTopBar tab={tab} onChangeTab={changeTab} />
 
       <ConnectSheet
         ref={sheetRef}

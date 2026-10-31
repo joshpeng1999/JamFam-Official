@@ -6,7 +6,6 @@ import { useShallow } from 'zustand/react/shallow';
 import { RequestCard } from '../../components/notifications/RequestCard';
 import { useCurrentUserId } from '../../src/store/useAuthStore';
 import { useConnectionsStore } from '../../src/store/useConnectionsStore';
-import { useConversationsStore } from '../../src/store/useConversationsStore';
 import { usePostsStore } from '../../src/store/usePostsStore';
 import { useUsersStore } from '../../src/store/useUsersStore';
 import { colors, spacing, typography } from '../../src/theme';
@@ -18,7 +17,6 @@ export default function NotificationsScreen() {
   const currentUserId = useCurrentUserId();
   const requests = useConnectionsStore(useShallow((s) => s.getIncomingRequests(currentUserId)));
   const respondToRequest = useConnectionsStore((s) => s.respondToRequest);
-  const ensureConversation = useConversationsStore((s) => s.ensureConversation);
   const getUser = useUsersStore((s) => s.getUser);
   const getPost = usePostsStore((s) => s.getPost);
 
@@ -46,10 +44,10 @@ export default function NotificationsScreen() {
               onAccept={() => respondToRequest(item.id, 'accepted').catch(showError)}
               onDecline={() => respondToRequest(item.id, 'declined').catch(showError)}
               onReply={() => {
-                ensureConversation(currentUserId, item.fromUserId, item.message).catch(showError);
-                router.push('/messages');
+                respondToRequest(item.id, 'accepted').catch(showError);
+                router.push(`/chat/${item.fromUserId}`);
               }}
-              onPressAvatar={() => router.push(`/profile/user/${item.fromUserId}`)}
+              onPressAvatar={() => router.push(`/user/${item.fromUserId}`)}
             />
           );
         }}
