@@ -16,6 +16,7 @@ export default function OtherUserProfileScreen() {
   const user = useUsersStore((s) => s.getUser(id));
   const getPostsByAuthor = usePostsStore((s) => s.getPostsByAuthor);
   const sendConnectionRequest = useConnectionsStore((s) => s.sendConnectionRequest);
+  const disconnect = useConnectionsStore((s) => s.disconnect);
   const isConnected = useConnectionsStore((s) => s.getAcceptedConnectionIds(currentUserId).includes(id));
   const sheetRef = useRef<BottomSheetModal>(null);
 
@@ -32,7 +33,25 @@ export default function OtherUserProfileScreen() {
         isOwnProfile={false}
         isConnected={isConnected}
         onPrimaryAction={() => {
-          if (isConnected) return;
+          if (isConnected) {
+            Alert.alert(
+              `Disconnect from ${user.name}?`,
+              'They’ll leave your JamFam and you won’t be able to message each other unless you reconnect.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Disconnect',
+                  style: 'destructive',
+                  onPress: () =>
+                    disconnect(currentUserId, user.id).catch((error) => {
+                      console.warn('[connections] disconnect failed:', error);
+                      Alert.alert('Couldn’t disconnect', 'Check your connection and try again.');
+                    }),
+                },
+              ],
+            );
+            return;
+          }
           if (!latestPost) {
             Alert.alert('No posts yet', `${user.name} hasn't shared any work to connect over yet.`);
             return;

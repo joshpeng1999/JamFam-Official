@@ -121,6 +121,12 @@ export default function ChatScreen() {
         />
       )}
 
+      {!canMessage && thread.length > 0 && (
+        <Text style={[typography.body, styles.emptyBody, styles.notConnected, { paddingBottom: insets.bottom || spacing.md }]}>
+          You can message {user.name} once you’re connected.
+        </Text>
+      )}
+
       {canMessage && (
         <View style={[styles.composer, { paddingBottom: insets.bottom || spacing.md }]}>
           <TextInput
@@ -187,6 +193,12 @@ const styles = StyleSheet.create({
   emptyBody: {
     color: colors.textTertiary,
     textAlign: 'center',
+  },
+  notConnected: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
   },
   composer: {
     flexDirection: 'row',
