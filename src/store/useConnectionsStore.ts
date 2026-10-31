@@ -1,10 +1,10 @@
-import { collection, doc, query, setDoc, updateDoc, where } from 'firebase/firestore';
+import { collection, doc, query, setDoc, where, writeBatch } from 'firebase/firestore';
 import { create } from 'zustand';
 
 import type { ConnectionRequest } from '../data/types';
 import { firestore } from '../services/firebase';
 import { subscribeToQuery, type Subscription } from '../services/firestoreSync';
-import { useConversationsStore } from './useConversationsStore';
+import { conversationIdFor, conversationsCollection, useConversationsStore } from './useConversationsStore';
 
 interface ConnectionsState {
   // Merged view of requests the signed-in user sent and received.
@@ -86,12 +86,23 @@ export const useConnectionsStore = create<ConnectionsState>((set, get) => {
     },
     respondToRequest: async (id, status) => {
       const target = get().requests.find((r) => r.id === id);
-      await updateDoc(doc(requestsCollection(), id), { status });
+      const batch = writeBatch(firestore());
+      batch.update(doc(requestsCollection(), id), { status });
       if (status === 'accepted' && target) {
-        await useConversationsStore
-          .getState()
-          .ensureConversation(target.toUserId, target.fromUserId, target.message);
+        const conversationId = conversationIdFor(target.fromUserId, target.toUserId);
+        // An existing chat keeps its real last message and position in the list.
+        const exists = useConversationsStore.getState().conversations.some((c) => c.id === conversationId);
+        if (!exists) {
+          // Same batch so a connection never ends up without its conversation.
+          batch.set(doc(conversationsCollection(), conversationId), {
+            participantIds: [target.fromUserId, target.toUserId].sort(),
+            requestId: id,
+            lastMessage: target.message ?? 'You’re now connected!',
+            lastMessageAt: new Date().toISOString(),
+          });
+        }
       }
+      await batch.commit();
     },
   };
 });

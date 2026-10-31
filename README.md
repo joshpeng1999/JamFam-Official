@@ -36,6 +36,7 @@ Accounts, data and media live in Firebase: Auth (email/password), Firestore, and
 | `projects/{id}` | Folder of posts | Owner |
 | `posts/{id}` | Video/audio/lyrics post; `mediaUri`/`coverUri` are Storage download URLs | Author |
 | `connectionRequests/{id}` | Request to connect over a post | Sender creates, recipient accepts/declines |
-| `conversations/{uidA_uidB}` | Connected pair + last message | Participants |
+| `conversations/{uidA_uidB}` | Connected pair + last message; created when a request is accepted | Participants |
+| `conversations/{uidA_uidB}/messages/{id}` | Chat message | Participants, as themselves; can't be edited or deleted |
 
 Media is stored at `users/{uid}/posts/{postId}/{media|cover}.{ext}` (100 MB limit per file).

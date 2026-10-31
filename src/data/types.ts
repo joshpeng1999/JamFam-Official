@@ -74,8 +74,17 @@ export interface Conversation {
   // both sides always resolve to the same doc.
   id: string;
   participantIds: string[];
+  // The accepted request that connected the pair; security rules check it.
+  requestId?: string;
   lastMessage: string;
   lastMessageAt: string;
+}
+
+export interface Message {
+  id: string;
+  senderId: string;
+  text: string;
+  createdAt: string;
 }
 
 export const COLLABORATOR_ROLES = [
@@ -108,3 +117,6 @@ export const COLLABORATOR_ROLES = [
 ] as const;
 
 export const MAX_CLIP_DURATION_SEC = 60;
+
+// Keep in sync with the `messages` rule in firestore.rules.
+export const MAX_MESSAGE_LENGTH = 2000;

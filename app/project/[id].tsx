@@ -4,18 +4,20 @@ import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } fr
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useShallow } from 'zustand/react/shallow';
 
-import { PostGrid } from '../../../../components/profile/PostGrid';
-import { Avatar } from '../../../../components/ui/Avatar';
-import { Pill } from '../../../../components/ui/Pill';
-import { usePostsStore } from '../../../../src/store/usePostsStore';
-import { useProjectsStore } from '../../../../src/store/useProjectsStore';
-import { useUsersStore } from '../../../../src/store/useUsersStore';
-import { colors, spacing, typography } from '../../../../src/theme';
+import { PostGrid } from '../../components/profile/PostGrid';
+import { Avatar } from '../../components/ui/Avatar';
+import { Pill } from '../../components/ui/Pill';
+import { useCurrentUserId } from '../../src/store/useAuthStore';
+import { usePostsStore } from '../../src/store/usePostsStore';
+import { useProjectsStore } from '../../src/store/useProjectsStore';
+import { useUsersStore } from '../../src/store/useUsersStore';
+import { colors, spacing, typography } from '../../src/theme';
 
 export default function ProjectDetailScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const currentUserId = useCurrentUserId();
   const project = useProjectsStore((s) => s.getProject(id));
   const posts = usePostsStore(useShallow((s) => s.getPostsByProject(id)));
   const getUser = useUsersStore((s) => s.getUser);
@@ -57,14 +59,16 @@ export default function ProjectDetailScreen() {
 
       <PostGrid posts={posts} onPressPost={() => {}} />
 
-      <View style={styles.addTileRow}>
-        <Pressable
-          onPress={() => router.push({ pathname: '/create', params: { projectId: project.id } })}
-          style={[styles.addTile, { width: addTileSize, height: addTileSize }]}
-        >
-          <Ionicons name="add" size={28} color={colors.textTertiary} />
-        </Pressable>
-      </View>
+      {project.ownerId === currentUserId && (
+        <View style={styles.addTileRow}>
+          <Pressable
+            onPress={() => router.push({ pathname: '/create', params: { projectId: project.id } })}
+            style={[styles.addTile, { width: addTileSize, height: addTileSize }]}
+          >
+            <Ionicons name="add" size={28} color={colors.textTertiary} />
+          </Pressable>
+        </View>
+      )}
     </ScrollView>
   );
 }

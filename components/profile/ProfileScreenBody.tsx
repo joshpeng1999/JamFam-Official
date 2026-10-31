@@ -1,6 +1,7 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -36,12 +37,17 @@ export function ProfileScreenBody({ user, isOwnProfile, isConnected, onPrimaryAc
   const projectCardWidth = (width - spacing.lg * 2 - GAP * (COLUMNS - 1)) / COLUMNS;
 
   const openPost = (post: Post) => {
-    router.push(`/profile/project/${post.projectId}`);
+    router.push(`/project/${post.projectId}`);
   };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingTop: insets.top }}>
       <ProfileHeader user={user} isOwnProfile={isOwnProfile} isConnected={isConnected} onPrimaryAction={onPrimaryAction} />
+      {!isOwnProfile && (
+        <Pressable onPress={() => router.back()} hitSlop={12} style={[styles.backButton, { top: insets.top + spacing.sm }]}>
+          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
+        </Pressable>
+      )}
       <ProfileTabs active={tab} onChange={setTab} />
 
       {tab === 'posts' && <PostGrid posts={posts} onPressPost={openPost} />}
@@ -57,7 +63,7 @@ export function ProfileScreenBody({ user, isOwnProfile, isConnected, onPrimaryAc
                 project={project}
                 posts={getPostsByProject(project.id)}
                 width={projectCardWidth}
-                onPress={() => router.push(`/profile/project/${project.id}`)}
+                onPress={() => router.push(`/project/${project.id}`)}
               />
             ))
           )}
@@ -73,6 +79,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  backButton: {
+    position: 'absolute',
+    left: spacing.lg,
   },
   projectGrid: {
     flexDirection: 'row',

@@ -1,8 +1,8 @@
 import { router } from 'expo-router';
 
-import { ProfileScreenBody } from '../../../components/profile/ProfileScreenBody';
-import { useCurrentUserId } from '../../../src/store/useAuthStore';
-import { useUsersStore } from '../../../src/store/useUsersStore';
+import { ProfileScreenBody } from '../../components/profile/ProfileScreenBody';
+import { useCurrentUserId } from '../../src/store/useAuthStore';
+import { useUsersStore } from '../../src/store/useUsersStore';
 
 export default function OwnProfileScreen() {
   const currentUserId = useCurrentUserId();

@@ -45,6 +45,9 @@ export default function RootLayout() {
             <Stack.Screen name="auth" options={{ gestureEnabled: false }} />
             <Stack.Screen name="profile-setup" />
             <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="user/[id]" />
+            <Stack.Screen name="project/[id]" />
+            <Stack.Screen name="chat/[id]" />
             <Stack.Screen name="create" options={{ presentation: 'modal' }} />
           </Stack>
         </BottomSheetModalProvider>
