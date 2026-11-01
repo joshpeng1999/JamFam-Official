@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -34,7 +35,7 @@ export function FeedTopBar({ tab, onChangeTab }: FeedTopBarProps) {
         </Pressable>
       </View>
 
-      <Pressable hitSlop={8}>
+      <Pressable hitSlop={8} onPress={() => router.push('/search')}>
         <Ionicons name="search" size={20} color={colors.textPrimary} />
       </Pressable>
     </View>
