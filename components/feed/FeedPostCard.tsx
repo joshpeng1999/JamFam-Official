@@ -1,6 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { Post, Project, User } from '../../src/data/types';
 import { colors, spacing, typography } from '../../src/theme';
@@ -41,6 +42,7 @@ export function FeedPostCard({
   const [expanded, setExpanded] = useState(false);
   const [progress, setProgress] = useState({ currentTime: 0, duration: post.durationSec ?? 0 });
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const artGradient = ART_GRADIENTS[post.waveformSeed % 3];
 
   return (
@@ -69,7 +71,7 @@ export function FeedPostCard({
       </View>
 
       {post.type !== 'lyrics' && (
-        <View style={styles.timestamp} pointerEvents="none">
+        <View style={[styles.timestamp, { top: insets.top + spacing.xxxl }]} pointerEvents="none">
           <Text style={styles.timestampText}>
             {formatDuration(progress.currentTime)}/{formatDuration(progress.duration || post.durationSec || 0)}
           </Text>
@@ -95,7 +97,6 @@ const styles = StyleSheet.create({
   timestamp: {
     position: 'absolute',
     left: spacing.lg,
-    top: spacing.xxxl + spacing.xl,
   },
   timestampText: {
     ...typography.caption,
