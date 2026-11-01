@@ -48,6 +48,7 @@ export default function RootLayout() {
             <Stack.Screen name="user/[id]" />
             <Stack.Screen name="project/[id]" />
             <Stack.Screen name="chat/[id]" />
+            <Stack.Screen name="search" />
             <Stack.Screen name="create" options={{ presentation: 'modal' }} />
           </Stack>
         </BottomSheetModalProvider>
