@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo.svg" width="120" alt="jamfam logo"/>
+</p>
+
 # JamFam-Official
 
 <h4 align="center">Connecting emerging artists with emerging projects</h4>
