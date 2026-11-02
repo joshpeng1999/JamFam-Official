@@ -1,6 +1,24 @@
 # JamFam-Official
 
-## Run it
+<h4 align="center">Connecting emerging artists with emerging projects</h4>
+
+<p align="center">
+   <a aria-label="SDK version" href="https://www.npmjs.com/package/expo" target="_blank">
+    <img alt="Expo SDK version" src="https://img.shields.io/npm/v/expo.svg?label=Expo SDK&color=8445bc">
+  </a>
+</p>
+
+<p align="center">
+  <a href="#about">About</a> •
+  <a href="#getting-started">Getting Started</a> •
+  <a href="#contributors">Contributors</a>
+</p>
+
+## About
+
+jamfam is an app that allows emerging artists to make personal connections and build projects with like-minded individuals.
+
+## Getting Started
 
 ```bash
 npm install
@@ -40,3 +58,18 @@ Accounts, data and media live in Firebase: Auth (email/password), Firestore, and
 | `conversations/{uidA_uidB}/messages/{id}` | Chat message | Participants, as themselves; can't be edited or deleted |
 
 Media is stored at `users/{uid}/posts/{postId}/{media|cover}.{ext}` (100 MB limit per file).
+
+## Contributors
+
+**The OGs**
+
+<a href="https://github.com/joshpeng1999">
+    <img src="https://avatars.githubusercontent.com/u/46659122?v=4" width="50" height="50" alt="joshpeng1999"/>
+</a>
+<a href="https://github.com/praneershrest">
+    <img src="https://avatars.githubusercontent.com/u/51378040?v=4" width="50" height="50" alt="praneershrest"/>
+</a>
+
+Tristan Turisno
+
+Henry Liu
