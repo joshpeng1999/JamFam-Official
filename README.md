@@ -10,6 +10,7 @@
 
 <p align="center">
   <a href="#about">About</a> •
+  <a href="#screenshots">Screenshots</a> •
   <a href="#getting-started">Getting Started</a> •
   <a href="#contributors">Contributors</a>
 </p>
@@ -17,6 +18,16 @@
 ## About
 
 jamfam is an app that allows emerging artists to make personal connections and build projects with like-minded individuals.
+
+## Screenshots
+
+| Video | Audio | Lyrics |
+|---|---|---|
+| <img src="docs/screenshots/video.jpg" width="220" alt="Video post in the Explore feed"/> | <img src="docs/screenshots/audio.jpg" width="220" alt="Audio post with a waveform in the Explore feed"/> | <img src="docs/screenshots/lyrics.jpg" width="220" alt="Lyrics post in the Explore feed"/> |
+
+| Share your work | Profile |
+|---|---|
+| <img src="docs/screenshots/create.jpg" width="220" alt="Sheet for choosing a lyrics, audio or video post"/> | <img src="docs/screenshots/profile.jpg" width="220" alt="Artist profile showing a project"/> |
 
 ## Getting Started
 
