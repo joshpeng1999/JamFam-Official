@@ -57,8 +57,6 @@ Accounts, data and media live in Firebase: Auth (email/password), Firestore, and
 | `conversations/{uidA_uidB}` | Connected pair + last message; created when a request is accepted, deleted on disconnect | Participants |
 | `conversations/{uidA_uidB}/messages/{id}` | Chat message | Participants, as themselves; can't be edited or deleted |
 
-Media is stored at `users/{uid}/posts/{postId}/{media|cover}.{ext}` (100 MB limit per file).
-
 ## Contributors
 
 **The OGs**
