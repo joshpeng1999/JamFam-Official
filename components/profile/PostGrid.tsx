@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
 import type { Post } from '../../src/data/types';
@@ -17,13 +18,15 @@ const TYPE_ICON: Record<Post['type'], keyof typeof Ionicons.glyphMap> = {
 interface PostGridProps {
   posts: Post[];
   onPressPost: (post: Post) => void;
+  /** Extra cell after the last post, such as an "add post" tile. Receives the cell size. */
+  renderTrailingCell?: (size: number) => ReactNode;
 }
 
-export function PostGrid({ posts, onPressPost }: PostGridProps) {
+export function PostGrid({ posts, onPressPost, renderTrailingCell }: PostGridProps) {
   const { width } = useWindowDimensions();
   const cellSize = (width - spacing.lg * 2 - GAP * (COLUMNS - 1)) / COLUMNS;
 
-  if (posts.length === 0) {
+  if (posts.length === 0 && !renderTrailingCell) {
     return (
       <View style={styles.empty}>
         <Text style={[typography.body, styles.emptyText]}>No posts yet.</Text>
@@ -43,6 +46,7 @@ export function PostGrid({ posts, onPressPost }: PostGridProps) {
           </View>
         </Pressable>
       ))}
+      {renderTrailingCell?.(cellSize)}
     </View>
   );
 }

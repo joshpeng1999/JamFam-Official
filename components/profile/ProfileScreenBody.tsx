@@ -37,7 +37,7 @@ export function ProfileScreenBody({ user, isOwnProfile, isConnected, onPrimaryAc
   const projectCardWidth = (width - spacing.lg * 2 - GAP * (COLUMNS - 1)) / COLUMNS;
 
   const openPost = (post: Post) => {
-    router.push(`/project/${post.projectId}`);
+    router.push({ pathname: '/post/[id]', params: { id: post.id, scope: 'author' } });
   };
 
   return (
