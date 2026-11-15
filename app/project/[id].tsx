@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -15,7 +15,6 @@ import { colors, spacing, typography } from '../../src/theme';
 
 export default function ProjectDetailScreen() {
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
   const { id } = useLocalSearchParams<{ id: string }>();
   const currentUserId = useCurrentUserId();
   const project = useProjectsStore((s) => s.getProject(id));
@@ -25,10 +24,12 @@ export default function ProjectDetailScreen() {
   if (!project) return null;
 
   const collaborators = project.collaboratorIds.map((cid) => getUser(cid)).filter((u): u is NonNullable<typeof u> => !!u);
-  const addTileSize = (width - spacing.lg * 2 - 2 * 2) / 3;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingTop: insets.top + spacing.md }}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{ paddingTop: insets.top + spacing.md, paddingBottom: insets.bottom + spacing.xxxl }}
+    >
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={12}>
           <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
@@ -57,18 +58,22 @@ export default function ProjectDetailScreen() {
         )}
       </View>
 
-      <PostGrid posts={posts} onPressPost={() => {}} />
-
-      {project.ownerId === currentUserId && (
-        <View style={styles.addTileRow}>
-          <Pressable
-            onPress={() => router.push({ pathname: '/create', params: { projectId: project.id } })}
-            style={[styles.addTile, { width: addTileSize, height: addTileSize }]}
-          >
-            <Ionicons name="add" size={28} color={colors.textTertiary} />
-          </Pressable>
-        </View>
-      )}
+      <PostGrid
+        posts={posts}
+        onPressPost={(post) => router.push(`/post/${post.id}`)}
+        renderTrailingCell={
+          project.ownerId === currentUserId
+            ? (size) => (
+                <Pressable
+                  onPress={() => router.push({ pathname: '/create', params: { projectId: project.id } })}
+                  style={[styles.addTile, { width: size, height: size }]}
+                >
+                  <Ionicons name="add" size={28} color={colors.textTertiary} />
+                </Pressable>
+              )
+            : undefined
+        }
+      />
     </ScrollView>
   );
 }
@@ -108,11 +113,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.background,
     borderRadius: 16,
-  },
-  addTileRow: {
-    paddingHorizontal: spacing.lg,
-    marginTop: -spacing.sm,
-    paddingBottom: spacing.xxxl,
   },
   addTile: {
     borderRadius: 8,
