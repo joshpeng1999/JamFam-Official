@@ -58,7 +58,16 @@ export function FeedPostCard({
         {post.type === 'audio' && post.mediaUri && (
           <>
             <LinearGradient colors={artGradient} style={StyleSheet.absoluteFill} />
-            <WaveformPlayer mediaUri={post.mediaUri} seed={post.waveformSeed} isActive={isActive} />
+            <WaveformPlayer
+              mediaUri={post.mediaUri}
+              seed={post.waveformSeed}
+              isActive={isActive}
+              onProgress={(currentTime, duration) =>
+                setProgress((prev) =>
+                  prev.currentTime === currentTime && prev.duration === duration ? prev : { currentTime, duration },
+                )
+              }
+            />
           </>
         )}
         {post.type === 'lyrics' && (

@@ -28,7 +28,9 @@ export function VideoPostView({ mediaUri, isActive, onProgress }: VideoPostViewP
     if (isActive) {
       player.play();
     } else {
+      // Swiping away pauses and rewinds, so the post starts from 0:00 next time.
       player.pause();
+      player.currentTime = 0;
     }
   }, [isActive, player]);
 
