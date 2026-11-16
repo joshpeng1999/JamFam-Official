@@ -1,4 +1,4 @@
-import { collection, doc, setDoc } from 'firebase/firestore';
+import { collection, doc, setDoc, updateDoc } from 'firebase/firestore';
 import { create } from 'zustand';
 
 import type { Post, PostType } from '../data/types';
@@ -23,6 +23,9 @@ export interface CreatePostInput {
   lookingForTags: string[];
 }
 
+// The parts of a post its author can change after publishing.
+export type PostEdits = Partial<Pick<Post, 'title' | 'description' | 'lyricsBody'>>;
+
 interface PostsState {
   posts: Post[];
   subscribe: () => Subscription;
@@ -31,6 +34,7 @@ interface PostsState {
   getPostsByAuthor: (authorId: string) => Post[];
   getPostsByProject: (projectId: string) => Post[];
   createPost: (input: CreatePostInput, onUploadProgress?: (fraction: number) => void) => Promise<Post>;
+  updatePost: (id: string, edits: PostEdits) => Promise<void>;
 }
 
 const postsCollection = () => collection(firestore(), 'posts');
@@ -75,5 +79,8 @@ export const usePostsStore = create<PostsState>((set, get) => ({
     await setDoc(ref, data);
     await useProjectsStore.getState().touchProject(input.projectId);
     return post;
+  },
+  updatePost: async (id, edits) => {
+    await updateDoc(doc(postsCollection(), id), edits);
   },
 }));

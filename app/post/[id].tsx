@@ -110,6 +110,17 @@ export default function PostViewerScreen() {
 
       {backButton}
 
+      {posts[activeIndex]?.authorId === currentUserId && (
+        <Pressable
+          onPress={() => router.push(`/edit-post/${posts[activeIndex].id}`)}
+          hitSlop={12}
+          style={[styles.editButton, { top: insets.top + spacing.sm }]}
+          accessibilityLabel="Edit post"
+        >
+          <Ionicons name="create-outline" size={24} color={colors.textPrimary} />
+        </Pressable>
+      )}
+
       <ConnectSheet
         ref={sheetRef}
         post={connectTarget}
@@ -133,6 +144,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  editButton: {
+    position: 'absolute',
+    right: spacing.lg,
+    zIndex: 10,
   },
   backButton: {
     position: 'absolute',

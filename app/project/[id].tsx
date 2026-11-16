@@ -34,7 +34,21 @@ export default function ProjectDetailScreen() {
         <Pressable onPress={() => router.back()} hitSlop={12}>
           <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
         </Pressable>
-        <Pill label={project.status === 'completed' ? 'Completed' : 'In Progress'} tone={project.status === 'completed' ? 'green' : 'blue'} />
+        <View style={styles.headerRight}>
+          <Pill
+            label={project.status === 'completed' ? 'Completed' : 'In Progress'}
+            tone={project.status === 'completed' ? 'green' : 'blue'}
+          />
+          {project.ownerId === currentUserId && (
+            <Pressable
+              onPress={() => router.push(`/edit-project/${project.id}`)}
+              hitSlop={12}
+              accessibilityLabel="Edit project"
+            >
+              <Ionicons name="create-outline" size={24} color={colors.textPrimary} />
+            </Pressable>
+          )}
+        </View>
       </View>
 
       <View style={styles.body}>
@@ -88,6 +102,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
   },
   body: {
     paddingHorizontal: spacing.lg,

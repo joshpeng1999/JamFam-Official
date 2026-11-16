@@ -5,6 +5,9 @@ import type { Project } from '../data/types';
 import { firestore } from '../services/firebase';
 import { subscribeToQuery, type Subscription } from '../services/firestoreSync';
 
+// The parts of a project its owner can change.
+export type ProjectEdits = Partial<Pick<Project, 'title' | 'description' | 'status'>>;
+
 interface ProjectsState {
   projects: Project[];
   subscribe: () => Subscription;
@@ -12,6 +15,7 @@ interface ProjectsState {
   getProjectsByOwner: (ownerId: string) => Project[];
   createProject: (input: { ownerId: string; title: string }) => Promise<Project>;
   touchProject: (id: string) => Promise<void>;
+  updateProject: (id: string, edits: ProjectEdits) => Promise<void>;
 }
 
 const projectsCollection = () => collection(firestore(), 'projects');
@@ -42,5 +46,8 @@ export const useProjectsStore = create<ProjectsState>((set, get) => ({
   },
   touchProject: async (id) => {
     await updateDoc(doc(projectsCollection(), id), { updatedAt: new Date().toISOString() });
+  },
+  updateProject: async (id, edits) => {
+    await updateDoc(doc(projectsCollection(), id), { ...edits, updatedAt: new Date().toISOString() });
   },
 }));
